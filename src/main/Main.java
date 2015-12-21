@@ -25,6 +25,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
 
+import DSLParser.DslParser;
+import DSLParser.RefactorConfig;
+import refactor.DemoVisitor2;
+import refactor.DemoVisitorTest;
 import refactor.RefactorFunc;
 
 public class Main {
@@ -35,11 +39,17 @@ public class Main {
 	private Text text_2;
 	private String inputString = "";
 	private Text text_3;
+	private Text text_4;
+	private Text text_5;
+	private static RefactorFunc rf;
+	private static DemoVisitor2 dm2;
 	/**
 	 * Launch the application.
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		rf = new RefactorFunc();
+		dm2 = new DemoVisitor2();
 		try {
 			Main window = new Main();
 			window.open();
@@ -132,13 +142,20 @@ public class Main {
 		combo.setBounds(10, 77, 155, 25);
 		combo.setText("sampleVariable");
 		
+
+		Combo combo_1 = new Combo(grpPreference, SWT.READ_ONLY);
+		combo_1.setItems(new String[] {"Yes", "No"});
+		combo_1.setBackground(SWTResourceManager.getColor(SWT.COLOR_GRAY));
+		combo_1.setBounds(10, 183, 155, 25);
+		combo_1.setText("Yes");
+		
 		Button btnRefactoring = new Button(grpPreference, SWT.NONE);
+		//wangcong
 		btnRefactoring.addSelectionListener(new SelectionAdapter() {
 			@SuppressWarnings("deprecation")
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				int flag = combo.getSelectionIndex();
-				RefactorFunc rf = new RefactorFunc();
 				float thr = Float.parseFloat(text_3.getText());
 				if(thr < 0){
 					rf.setThreshold(0);
@@ -158,7 +175,16 @@ public class Main {
 				parser.setResolveBindings(true);
 				CompilationUnit result = (CompilationUnit) parser.createAST(null);
 				result.accept(rf);
-				text_2.setText(result.toString());
+				result.accept(dm2);
+				String resultStr = dm2.getResult();
+				int flag2 = combo_1.getSelectionIndex();
+				if(flag2 == 0){
+					DemoVisitorTest d=new DemoVisitorTest(resultStr);
+					text_2.setText(d.newCode());
+				}
+				else{
+					text_2.setText(result.toString());
+				}
 			}
 		});
 		btnRefactoring.setText("Refactoring");
@@ -171,6 +197,55 @@ public class Main {
 		text_3 = new Text(grpPreference, SWT.BORDER | SWT.CENTER);
 		text_3.setText("0.5");
 		text_3.setBounds(10, 131, 155, 23);
+		
+		Label lblHandledeadcode = new Label(grpPreference, SWT.NONE);
+		lblHandledeadcode.setText("Handle Dead Code");
+		lblHandledeadcode.setBounds(10, 160, 155, 17);
+		
+		Label lblEmitiedNts = new Label(grpPreference, SWT.NONE);
+		lblEmitiedNts.setText("Emited Ints");
+		lblEmitiedNts.setBounds(10, 214, 155, 17);
+		
+		text_4 = new Text(grpPreference, SWT.BORDER | SWT.CENTER);
+		text_4.setText("[-1,0,1]");
+		text_4.setBounds(10, 237, 155, 23);
+		
+		text_5 = new Text(grpPreference, SWT.BORDER | SWT.CENTER);
+		text_5.setText("[-1.0,0.0,1.0]");
+		text_5.setBounds(10, 289, 155, 23);
+		
+		Label lblEmitedDoubles = new Label(grpPreference, SWT.NONE);
+		lblEmitedDoubles.setText("Emited Doubles");
+		lblEmitedDoubles.setBounds(10, 266, 155, 17);
+		
+		Button btnLoadDsl = new Button(grpPreference, SWT.NONE);
+		btnLoadDsl.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				FileDialog dialog = new FileDialog(shlR, SWT.OPEN);
+				dialog.setFilterPath("");
+				dialog.setText("Choose DSL File");
+				dialog.setFileName("");
+				dialog.setFilterNames(new String[] { "DSL(*.dsl)"});
+				dialog.setFilterExtensions(new String[] { "*.dsl"});
+				String fileName = dialog.open();
+				String fstr = "";
+				if(fileName != null){
+					fstr = readToString(fileName);
+					RefactorConfig rc = DslParser.parse(fstr); 
+					rf.setThreshold(rc.getPermitFunctionSimilarity());
+					text_3.setText("" + rc.getPermitFunctionSimilarity());
+					rf.setVariableStyle(rc.getVariableNameStyleIndex());
+					combo.select(rc.getVariableNameStyleIndex());
+					dm2.changeEmitInts(rc.getPermitIntegerList());
+					text_4.setText(rc.getPermitIntegerList().toString());
+					dm2.changeEmitDoubs(rc.getPermitFloatList());
+					text_5.setText(rc.getPermitFloatList().toString());
+				}
+			}
+		});
+		btnLoadDsl.setText("Load DSL");
+		btnLoadDsl.setBounds(10, 439, 155, 27);
 		
 		Group grpResult = new Group(shlR, SWT.NONE);
 		grpResult.setText("Result");

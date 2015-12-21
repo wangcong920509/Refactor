@@ -17,7 +17,20 @@ public class Main {
 			System.out.println(m_variable2);
 			System.out.println(m_variable2);
 		}
+		while(1){
+			if(true){
+				return 1;
+			}
+			else{
+				break;
+			}
+			let_it_go = 5.0;
+		}
 		System.out.println("Hello World");
+		return 0;
+		M_Variable4 = 4;
+		let_it_go = 5.0;
+		hello = true;
 	}
 	public static void hello(int i){
 		let_it_go = 2.0;
